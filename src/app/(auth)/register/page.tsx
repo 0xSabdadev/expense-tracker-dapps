@@ -1,13 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
-const LoginPage = () => {
+export default function RegisterPage() {
   const router = useRouter();
   const [error, setError] = useState('');
 
@@ -16,21 +15,26 @@ const LoginPage = () => {
     const formData = new FormData(e.currentTarget);
     
     try {
-      const res = await signIn('credentials', {
-        email: formData.get('email'),
-        password: formData.get('password'),
-        redirect: false,
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: formData.get('name'),
+          email: formData.get('email'),
+          password: formData.get('password'),
+        }),
       });
 
-      if (res?.error) {
-        setError(res.error);
-        return;
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.message || 'Something went wrong');
       }
 
-      router.push('/dashboard');
-      router.refresh();
-    } catch (error) {
-      console.error(error);
+      router.push('/login');
+    } catch (error: any) {
+      setError(error.message);
     }
   };
 
@@ -38,10 +42,17 @@ const LoginPage = () => {
     <div className="min-h-screen flex items-center justify-center">
       <Card className="w-[350px]">
         <CardHeader>
-          <CardTitle>Login</CardTitle>
+          <CardTitle>Register</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Input 
+                name="name" 
+                placeholder="Name"
+                required 
+              />
+            </div>
             <div className="space-y-2">
               <Input 
                 type="email" 
@@ -60,7 +71,7 @@ const LoginPage = () => {
             </div>
             {error && <p className="text-red-500 text-sm">{error}</p>}
             <Button type="submit" className="w-full">
-              Login
+              Register
             </Button>
           </form>
         </CardContent>
@@ -68,5 +79,3 @@ const LoginPage = () => {
     </div>
   );
 }
-
-export default LoginPage;
